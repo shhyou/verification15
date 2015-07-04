@@ -1,0 +1,129 @@
+\documentclass{article}
+
+% Math Typings
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{colonequals}
+\usepackage[margin=3cm]{geometry}
+\usepackage{bussproofs}
+\input{mathdef.tex}
+
+% for Haskell/Agda code
+\usepackage{listings}
+\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+
+\newcommand{\U}{\mathcal{U}}
+\newcommand{\bN}{$\N$}
+\newcommand{\uu}{\text{\_}}
+\newcommand{\cons}{\coloncolon}
+\newcommand{\GG}{\Gamma}
+\newcommand{\Gg}{\gamma}
+\newcommand{\GD}{\Delta}
+\newcommand{\Gd}{\delta}
+\newcommand{\Ga}{\alpha}
+\newcommand{\Gb}{\beta}
+\newcommand{\Gt}{\tau}
+\newcommand{\Gn}{\eta}
+\newcommand{\GS}{\Sigma}
+\newcommand{\Gs}{\sigma}
+\newcommand{\GL}{\Lambda}
+\newcommand{\Gl}{\lambda}
+\newcommand{\A}[1]{\Pi[#1]\;}
+\newcommand{\As}[1]{\Pi\;#1\;}
+\newcommand{\E}[1]{\Sigma[#1]\;}
+\newcommand{\Es}[1]{\Sigma\;#1\;}
+\newcommand{\entails}{\;\;\vdash\;\;}
+\newcommand{\lam}[1]{\lambda #1.\;}
+\newcommand{\fst}{\mathtt{fst}\,}
+\newcommand{\snd}{\mathtt{snd}\,}
+\newcommand{\injl}{\mathtt{left}\,}
+\newcommand{\injr}{\mathtt{right}\,}
+\newcommand{\case}{\mathtt{case}\,}
+
+\makeatletter
+\newcommand*\idstyle{%
+        \expandafter\id@style\the\lst@token\relax
+}
+\def\id@style#1#2\relax{%
+  \ifcat#1\relax\else
+    \ifnum`#1<\uccode`#1%
+      \it
+    \else
+      \ifnum`#1>\uccode`#1%
+        \it
+      \fi
+    \fi
+  \fi
+}
+\makeatother
+
+\lstdefinelanguage{HaskellUlisses} {
+	basicstyle=\linespread{1.2}\selectfont\small,
+	columns=fullflexible,     %%
+	keepspaces=true,          %%
+	identifierstyle=\idstyle, %%
+	morekeywords={data,class,instance,case,of,where,let,in,do,if,then,else,type,with,newtype,syntax},
+	sensitive=true,
+	morecomment=[l][\small\it\textbf]{--},
+	morecomment=[s][\small\it\textbf]{\{-}{-\}},
+	morestring=[b]",
+	stringstyle=\texttt,
+	showstringspaces=false,
+	numberstyle=\tiny,
+	numberblanklines=true,
+	showspaces=false,
+	breaklines=true,
+	showtabs=false,
+  aboveskip=4pt,
+  belowskip=-13pt
+}
+
+\lstnewenvironment{code}{\lstset{language=HaskellUlisses,mathescape=true}}{}
+
+%% packages & settings for xeCJK
+\usepackage{setspace}
+\usepackage{fontspec}
+\usepackage{xeCJK}
+\setCJKmainfont[AutoFakeBold=4,AutoFakeSlant=.3]{微軟正黑體}
+\XeTeXlinebreaklocale "zh"
+\XeTeXlinebreakskip = 0pt plus 1pt
+
+\setlength{\parindent}{16pt}
+\setlength{\parskip}{5pt}
+\linespread{1.3}
+
+\begin{document}
+\title{LTL types FRP 閱讀報告}
+\author{}
+\date{}
+\maketitle
+
+\newcommand{\Time}{\mathsf{Time}}
+
+\section{簡介}
+\section{Dependent Types}
+\section{Modelling Temporal Logic}
+\section{Functional Reactive Programming}
+  Functional Reactive Programming (FRP) 是一種響應式編成
+  （Reactive programming）
+  的型式。相應式編成通常以值與資料的流向為主，相對於函數式或命令式編成中以計算
+  或狀態轉移為核心的概念。其中 FRP 的模型是撰寫 Signals （隨時間而變的值）
+  上的函數。舉例來說，設 $x,y:\Time\to\R$ 代表使用者滑鼠的座標，則我們可以寫
+
+  \begin{code}
+  dist = $\widehat{\mathit{sqrt}}$($\widehat{\mathit{pow}}$(x,2) $\widehat{+}$ $\widehat{\mathit{pow}}$(y,2))
+  \end{code}
+
+  來定義隨時間而變的值 \textit{dist}。其中我們把平常的指數函數、根號函數
+  point-wise lift 到 Signals ($\Time\to\R$) 上。在此定義之下，我們有對於
+  任意 $t\in\Time$，
+
+  \begin{code}
+  dist(t) = sqrt(pow(x(t), 2) + pow(y(t), 2))
+  \end{code}
+
+\section{LTL types FRP}
+\section{Remark: 演算法優化}
+\section{參考資料}
+\end{document}

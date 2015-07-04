@@ -1,3 +1,8 @@
 # Temporary Files
 *~
 *#
+*.pdf
+*.aux
+*.synctex.gz
+*.log
+c.bat
