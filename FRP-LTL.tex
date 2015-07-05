@@ -103,7 +103,6 @@
 
 \section{簡介}
 \section{Dependent Types}
-\section{Modelling Temporal Logic}
 \section{Functional Reactive Programming}
   Functional Reactive Programming (FRP) 是一種響應式編成
   （Reactive programming）
@@ -122,6 +121,42 @@
   \begin{code}
   dist(t) = sqrt(pow(x(t), 2) + pow(y(t), 2))
   \end{code}
+
+  正式的說，一個會產生型別為 $a$ 的值的 \emph{Signal} 為
+
+  \begin{code}
+  Signal : $\uu\to\uu$
+  Signal a = $\Time$ $\to$ a
+  \end{code}
+
+  所以上例中 \textit{dist} 具有型別 $\text{Signal}\; \R$. 在 Yampa 的設計
+  當中，為了避免直接撰寫 Signal 時可能引入的 time-leak 及 space-leak 問題，
+  程式設計師只被允許使用給定的 combinators 撰寫所謂的 \emph{signal functions}
+  （\emph{signal transformers}），且沒有直接操作 $\text{Signal}\; a$ 的方法：
+
+  \begin{code}
+  SF a b = Signal a $\to$ Signal b
+  \end{code}
+
+  FRP 設計中，還有另一項元素：事件。由於在本系統中，時間採取離散的設計
+  （有些 FRP 系統中時間的模型是連續的），因此事件與 Signal 是結合在一起的。
+  例如具有 $\text{Signal}\;(\text{Maybe}\;a)$ 型別的函式即為事件。舉例來說，
+  以下的 Signal \textit{mouseButton} 可以定義出相關的事件
+  \textit{mouseClick}。
+
+  \begin{code}
+  mouseButton(t) = $\displaystyle \left\{ \begin{array}{cl} \mathit{down} & \text{if\; } t\in [2,5) \\ \mathit{up} & \text{otherwise} \end{array} \right.$
+
+  mouseClick(t) = $\displaystyle \left\{ \begin{array}{cl} \mathit{just\; clicked} & \text{if\; } t=5 \\ \mathit{nothing} & \text{otherwise} \end{array} \right.$
+  \end{code}
+
+
+  \subsection{FRP Combinators}
+
+  在 Yampa 的設計中，
+
+  \subsection{Well-behaved Reactive Functions}
+\section{Modelling Temporal Logic}
 
 \section{LTL types FRP}
 \section{Remark: 演算法優化}
