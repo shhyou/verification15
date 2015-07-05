@@ -103,6 +103,13 @@
 
 \section{簡介}
 \section{Dependent Types}
+  depenent types
+  types as values
+  type level functions
+  pi type
+  sigma type
+  predicate
+
 \section{Functional Reactive Programming}
   Functional Reactive Programming (FRP) 是一種響應式編成
   （Reactive programming）
@@ -125,7 +132,7 @@
   正式的說，一個會產生型別為 $a$ 的值的 \emph{Signal} 為
 
   \begin{code}
-  Signal : $\uu\to\uu$
+  Signal : $\U\to\U$
   Signal a = $\Time$ $\to$ a
   \end{code}
 
@@ -157,8 +164,81 @@
 
   \subsection{Well-behaved Reactive Functions}
 \section{Modelling Temporal Logic}
+  在 Dependently Typed Language 當中，LTL 命題可以很直接的 encode 在型別
+  當中。 LTL 命題直接就是 $\Time$ 上面的 predicate，型別為 $\Time\to\U$。
+  與此同時，我們可以直接給 LTL 的語法與語義轉換成程式實作如下：
+
+  \begin{code}
+  T, F : $\Time\to\U$
+  T t = $\top$
+  F t = $\bot$
+
+  $(\cdot\land\cdot), (\cdot\lor\cdot), (\cdot\Rightarrow\cdot)$ : $(\Time\to\U)\to(\Time\to\U)\to\Time\to\U$
+  (A $\land$ B) t = A t $\times$ B t
+  (A $\lor$ B) t = A t + B t
+  (A $\Rightarrow$ B) t = A t $\to$ B t
+
+  $\bigcirc,\Diamond,\Box$ : $(\Time\to\U)\to\Time\to\U$
+  ($\bigcirc$ A) s = A ($s+1$)
+  ($\Diamond$ A) s = $\exists$ {t} ($s\le t$) $\times$ A 
+  ($\Box$ A) s = $\forall$ {t} ($s\le t$) $\to$ A t
+
+  $(\cdot\mathsf{U}\cdot)$ : $(\Time\to\U)\to(\Time\to\U)\to\Time\to\U$
+  (A $\mathsf{U}$ B) s = $\exists$ {t} ($s\le t$) $\times$ A [s,t) $\times$ B t
+
+  $(\cdot[\cdot,\cdot))$ : $(\Time\to\U)\to\Time\to\Time\to\U$
+  A [s,u) = $\forall$ {t} ($s\le t$) $\to$ ($t<u$) $\to$ A t
+  \end{code}
+
+  其中在以上程式碼中， $(\cdot\times\cdot)$ 是 non-dependent pair 的 data types
+  ， $(\cdot+\cdot)$ 是 non-dependent sum 的 data types，兩者由 Curry-Howard
+  Correspondence 分別對應到邏輯中的 conjunction 以及 disjunction。
+
+  由於型別對應到命題，我們可以看到 LTL 的 modalities 能被直接表述在型別中。
+  函數 $A [s,u)$ 則代表著 predicate $A$ 在時間 $[s,u)$ 的半閉半開區間中恆
+  成立。與此類似的，還有 $(\cdot[\cdot,\cdot])$ 以及
+  $(\cdot\langle\cdot,\cdot\rangle)$ 等函數（其中 $A\langle s,t\rangle$
+  代表存在 $t\in [s,u]$ 使得 $A\,t$ 成立）。
+
+  底下我們一併給出其餘的 modalities。需要注意的是在 constructive logic
+  當中，原先二值邏輯所具有的 duality 可能不再成立。對於許多 modalities，我們
+  直接給出其 constructive 的版本，因為 constructive 的版本中包含了驗證
+  其真的成立的證明。
+
+  \begin{code}
+  $(\cdot\underline{\mathsf{U}}\cdot),(\cdot\rhd\cdot),(\cdot\unrhd\cdot),(\cdot\leadsto\cdot)$ : $(\Time\to\U)\to(\Time\to\U)\to\Time\to\U$
+  (A $\underline{\mathsf{U}}$ B) s = $\exists$ {t} ($s\le t$) $\times$ A [s,t] $\times$ B t
+  (A $\rhd$ B) s = $\forall$ {t} ($s\le t$) $\to$ A [s,t) $\to$ B t
+  (A $\unrhd$ B) s = $\forall$ {t} ($s\le t$) $\to$ A [s,t] $\to$ B t
+  (A $\leadsto$ B) s = $\forall$ {s} ($s\le t$) $\to$ A [s,t] $\to$ B $\langle$ s,t $\rangle$
+  \end{code}
+
+  特別的是，$A\Rightarrow B$, $A\unrhd B$ 以及 $A\rhd B$ 三者都是
+  \emph{function space}：
+
+  \begin{itemize}
+    \item 型別 $A\Rightarrow B$ 的元素都是 \emph{stateless function}，其
+    其在時間 $t$ 時的輸出值只關聯於時間 $t$ 時的輸入值。
+
+    \item 型別 $A\unrhd B$ 的元素是 \emph{casual function}，其在時間 $t$
+    時的輸出值依賴於輸入值的某一段歷史。
+
+    \item 型別 $A\rhd B$ 的元素是 \emph{decoupled function}，其在時間 $t$
+    時的輸出值雖然也依賴於輸入的一段歷史，但不可以依賴於時間 $t$ 時的
+    輸入值。
+  \end{itemize}
+
+  對於以上 LTL 語義的實作，我們有如下的結果：對於任意有 uninterpreted atoms
+  $\overrightarrow{A}$ 的 LTL 命題 $F$，我們有
+
+  \[ \text{若 } \vdash p:\forall{\overrightarrow{A}},t.\; F\,t \text{ ，則 } \;F \text{ 是 tautology}\]
+
+  此外， LTL 當中關於「過去」的 modality $\ominus$ (yesterday)、$\boxminus$
+  (historically)、$\cdot\mathsf{S}\cdot$ (since) 以及 once (dual to $\Diamond$)
+  也是類似的實作出來。
 
 \section{LTL types FRP}
 \section{Remark: 演算法優化}
+\section{其餘性質}
 \section{參考資料}
 \end{document}
