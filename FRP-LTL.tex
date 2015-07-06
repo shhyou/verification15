@@ -371,44 +371,79 @@ SF$'$ A B s = $\E{f : \text{Signal}\, A \to \text{Signal}\, B} \mathsf{Casual}_s
 
   我們顯然可見以 LTL 刻畫的 type 更為簡潔。
 
-  \paragraph{FRP Primitives} FRP 的部份 Primitives
+  \paragraph{FRP Primitives} 前面我們介紹了部份 Yampa 的 FRP primitives，
+  這裡我們對應地給出部份 LTL-types-FRP 中的 typing 以及實作。從型別當中我們
+  可以看見更多有關時序的資訊表露出來，例如原先 Yampa 的 \textit{constant}
+  函數型別（透過 $\text{SF}'\,A\,B$ ）對應到$B'\to\llens \langle A'\rangle \unrhd \langle B'\rangle \rlens$，但這裡 LTL 的型別可以是 $\llens\Box B\Rightarrow A\rhd B\rlens\,(\equiv \forall\{s\}(\forall\{t\}(s\le t)\to B\,t)\to \forall\{t\}(s\le t)\to A[s,t)\to B\,t)$（其中 $A',B':\U$、$A,B:\text{RSet}$），型別裡明確的表明了 $B:\text{RSet}$ 必須在未來總是成立，且函數是
+  decoupled （不依賴於同一個時間的輸入）。
+
+  \textit{decouple} 函數也可以看出輸入一個 $A$ 後輸出的是 $\ominus A$
+  （有 delay）。當然當 $A\equiv\langle A'\rangle$ 時 \textit{decouple}
+  的型別會簡化為 $A'\rhd A'$。（\textit{decouple} 的型別展開來為
+  $\forall\{A,s\}\; A\,(s-1)\to \forall\{t\}(s\le t)\to A[s,t) \to A\,(t-1)$。）
+
   \begin{code}
   constant : $\forall${A,B} $\llens \Box B\Rightarrow A\rhd B\rlens$
-
-  localTime
-
-  initially : $\forall${A} $\llens A\Rightarrow A\unrhd A\rlens$
+  constant $\Gt$ $\Wit{s<=t}$ $\Gs$ = $\Gt$ $\Wit{s<=t}$
 
   decouple : $\forall${A} $\llens\ominus A\Rightarrow A\rhd \ominus A\rlens$
+  decouple a $\Wit{s<=t}$ $\Gs$ = if $s\le t-1$ then $\Gs$ $\Wit{s<=t-1}$ $\Wit{t-1<=t}$ else a
   \end{code}
-  \paragraph{Event Primitives} FRP 的事件
+  \paragraph{Event Primitives} 同樣的我們也將 FRP 當中 event 的模型延伸到
+  dependently typed 的環境下，並寫與 LTL 結合。在程式碼中，一個 event 的
+  型別是 $\TE A$。在時間 $s$ 時，$\TE A$ 有兩個值：沒有事件 \textit{nothing}
+  或是事件 \textit{just a}（其中 $a:A\,s$）。
+
+  在 \textit{now} 以及 \textit{later} 函式當中，我們可以看到輸入的參數型別分別是 $B$ 以及 $\Diamond B$（展開來
+  是 $B\,s$ 以及 $\exists \{t\} (s\le t)\times B\,t$
+
   \begin{code}
-  never
+  never : $\forall${A,B} $\llens A\rhd \TE B\rlens$
+  never $\Wit{s<=t}$ $\Gs$ = nothing
 
-  now
+  now : $\forall${A,B} $\llens B\Rightarrow A\rhd\TE B\rlens$
+  now {s} b {t} $\Wit{s<=t}$ $\Gs$ = if $s=t$ then just b else nothing
 
-  later
-
-  tag
-
-  edge
-
-  hold
-
-  first
-
-  last
-
-  switch
-
-  rswitch
+  -- $\forall\{s\} (\exists \{u\} (s\le u)\times B\,u) \to \forall\{t\}(s\le t)\to A[s,t)\to \TE B\, t$
+  later : $\forall${A,B} $\llens \Diamond B\Rightarrow A\rhd\TE B\rlens$
+  later ({u}, ($\_$,b)) {t} $\Wit{s<=t}$ $\Gs$ = if $t = u$ then just b else nothing
   \end{code}
-  \paragraph{Loops} FRP 的不動點
+
+  與 event 相伴隨的就是可以改變 FRP 系統資訊傳播結構的 switch 。這邊需要
+  用到 $\Time$ 上的遞迴，實作與證明操作相對麻煩，因此我們忽略實作僅提供型別。
+  \textit{switch} 與 \textit{rswitch} 的差別在於 \textit{switch} 只考慮
+  第一個 event，而 \textit{rswitch} 考慮每一個 event 。此處 LTL 的型別
+  同樣告訴了我們進行替換動作的函式 $g : \Box (C \Rightarrow A \unrhd B)$
+  被要求必須能在未來任何時間點執行（並產生出替換用的 $A\unrhd B$ ），因為
+  \textit{switch} 的動作有可能在未來任何時間點發生。
+
   \begin{code}
-  fix
-  ifix
-  loop
+  first : $\forall${A} $\llens \TE A\leadsto \TE A\rlens$
+  last : $\forall${A} $\llens \TE A\leadsto \TE A\rlens$
+  switch : $\forall${A,B,C} $\llens (A\unrhd (B\land \TE C))\Rightarrow \Box(C\Rightarrow A\unrhd B) \Rightarrow A\unrhd B\rlens$
+  rswitch : $\forall${A,B} $\llens (A\unrhd B) \Rightarrow (A\land \TE(A\unrhd B))\unrhd B\rlens$
   \end{code}
+  \paragraph{Loops} 將 FRP 中的 fixed-point combinator 以 LTL 描述時稍微
+  麻煩一點，我們這裡也只先給出其型別。由於邏輯中要避免矛盾，我們的 fixed-point
+  combinator 只能對 decoupled function 做（不像原先 Haskell 中的實作會
+  有任意的 $\bot$ 元素）。
+
+  \begin{code}
+  -- $\forall${A,s} ($\forall${u} ($s\le u$) $\to$ A[s,u) $\to$ A u) $\to$ $\forall${t} ($s\le t$) $\to$ A t
+  fix : $\forall${A} $\llens (A\rhd A) \Rightarrow \Box A\rlens$
+  fix {s} f $\Wit{s<=t}$ = f $\Wit{s<=t}$ $\Gs$ where
+      $\Gs$ : $\forall${u} A[s,u)
+      $\Gs$ $\Wit{s<=t}$ $\Wit{t<u}$ = f $\Wit{s<=t}$ $\Gs$
+
+  ifix : $\forall${A,B} $\llens ((A\land B)\rhd A) \Rightarrow B\rhd A\rlens$
+  loop : $\forall${A,B,C} $\llens ((A\land B)\rhd (A\land C)) \Rightarrow B\rhd C\rlens$
+  \end{code}
+
+  在以上的 type 中，decoupled function 有 fixed-point 的事實被表述在
+  \textit{fix} 之中，其對於任意（最多只能仰賴上一次的輸入）的函數
+  $A\rhd A$ 構造出了其 fixed-point $\Box A$，接著 \textit{ifix} 將其擴充為
+  $B-$indexed fixed-point combinator，從而實作出 FRP 中的 \textit{loop}
+  combinator。
 
 \section{Remark: 演算法優化}
 \section{其餘性質}
