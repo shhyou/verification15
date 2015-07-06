@@ -16,6 +16,10 @@
 
 \newcommand{\llens}{[\![}
 \newcommand{\rlens}{]\!]}
+\newcommand{\Time}{\mathsf{Time}}
+\newcommand{\TU}{\mathsf{U}}
+\newcommand{\TE}{\mathsf{E}}
+\newcommand{\Wit}[1]{$\,\text{\texttt{#1}}\,$}
 
 \newcommand{\U}{\mathcal{U}}
 \newcommand{\bN}{$\N$}
@@ -103,8 +107,6 @@
 \date{}
 \maketitle
 
-\newcommand{\Time}{\mathsf{Time}}
-
 \section{簡介}
 \section{Dependent Types}
   depenent types
@@ -134,11 +136,11 @@
   ($\Diamond$ A) s = $\exists$ {t} ($s\le t$) $\times$ A 
   ($\Box$ A) s = $\forall$ {t} ($s\le t$) $\to$ A t
 
-  $(\cdot\mathsf{U}\cdot)$ : $(\Time\to\U)\to(\Time\to\U)\to\Time\to\U$
-  (A $\mathsf{U}$ B) s = $\exists$ {t} ($s\le t$) $\times$ A [s,t) $\times$ B t
+  $(\cdot\TU\cdot)$ : $(\Time\to\U)\to(\Time\to\U)\to\Time\to\U$
+  (A $\TU$ B) s = $\exists$ {t} ($s\le t$) $\times$ A[s,t) $\times$ B t
 
   $(\cdot[\cdot,\cdot))$ : $(\Time\to\U)\to\Time\to\Time\to\U$
-  A [s,u) = $\forall$ {t} ($s\le t$) $\to$ ($t<u$) $\to$ A t
+  A[s,u) = $\forall$ {t} ($s\le t$) $\to$ ($t<u$) $\to$ A t
   \end{code}
 
   其中在以上程式碼中， $(\cdot\times\cdot)$ 是 non-dependent pair 的 data types
@@ -157,8 +159,8 @@
   其真的成立的證明。
 
   \begin{code}
-  $(\cdot\underline{\mathsf{U}}\cdot),(\cdot\rhd\cdot),(\cdot\unrhd\cdot),(\cdot\leadsto\cdot)$ : $(\Time\to\U)\to(\Time\to\U)\to\Time\to\U$
-  (A $\underline{\mathsf{U}}$ B) s = $\exists$ {t} ($s\le t$) $\times$ A [s,t] $\times$ B t
+  $(\cdot\underline{\TU}\cdot),(\cdot\rhd\cdot),(\cdot\unrhd\cdot),(\cdot\leadsto\cdot)$ : $(\Time\to\U)\to(\Time\to\U)\to\Time\to\U$
+  (A $\underline{\TU}$ B) s = $\exists$ {t} ($s\le t$) $\times$ A [s,t] $\times$ B t
   (A $\rhd$ B) s = $\forall$ {t} ($s\le t$) $\to$ A [s,t) $\to$ B t
   (A $\unrhd$ B) s = $\forall$ {t} ($s\le t$) $\to$ A [s,t] $\to$ B t
   (A $\leadsto$ B) s = $\forall$ {s} ($s\le t$) $\to$ A [s,t] $\to$ B $\langle$ s,t $\rangle$
@@ -252,7 +254,7 @@
   在非 dependently typed language 當中， FRP 程式的型別只有不動的 Signal、
   SF 等，不過在 dependently typed langauge 當中，很自然的型別也可以被 $\Time$
   所 parameterize。我們稱此型別為 \emph{Reactive Type}。注意到第三節中
-  LTL 的構造（$(\cdot\land\cdot), (\cdot\lor\cdot), (\cdot\Rightarrow\cdot),\bigcirc,\Box,\Diamond,(\cdot\mathsf{U}\cdot)$）都是 $\text{RSet}$ 上的函數。
+  LTL 的構造（$(\cdot\land\cdot), (\cdot\lor\cdot), (\cdot\Rightarrow\cdot),\bigcirc,\Box,\Diamond,(\cdot\TU\cdot)$）都是 $\text{RSet}$ 上的函數。
   在這樣的設計之下，Curry-Howard Correspondence 提供給我們的是：「
   \emph{Propositinos with one time parameter (temporal propositions) as reactive types}」[1]。
 
@@ -277,6 +279,72 @@
     time 參數給 quantify 起來。對於 $A:\text{RSet}$，我們有 $\Gs\{s\}:A\,t$
     對任意的 $\Gs:\llens A\rlens$。
   \end{enumerate*}
+
+  顯然我們有 $\text{Signal}\,A\approx \llens\langle A\rangle\rlens$。
+  此外，我們也可以將 type constructors pointwisely lift 到 Reactive type
+  上面，則前述的 \textit{mouseButton} 以及 \textit{mouseClick} 的型別可以改寫如下：
+
+  \begin{code}
+  $\TE$ : RSet $\to$ RSet
+  $\TE$ a = $\Gl$t. Maybe (a t)
+
+  mouseButton : $\llens\;\langle$MouseButtonState$\rangle\;\rlens$
+  mouseClick   : $\llens\;\TE\langle$MouseEvent$\rangle\;\rlens$
+  \end{code}
+
+  \begin{code}
+  ($\cdot$before$\cdot$) : $\forall$ {A,s,u,v} A[s,v] $\to$ $u\le v$ $\to$ A[s,u]
+  ($\Gs$ before $\Wit{u<=v}$) $\Wit{s<=t}$ $\Wit{t<=u}$ = $\Gs$ $\Wit{s<=t}$ $\Wit{t<=u<=v}$
+
+  $(\cdot\$\cdot)$ : $\forall$ {A,B,s,u} $(A\unrhd B)\to A[s,u] \to B[s,u]$
+  (f $\$$ $\Gs$) $\Wit{s<=t}$ $\Wit{t<=u}$ = f $\Wit{s<=t}$ ($\Gs$ before $\Wit{t<=u}$)
+
+  arr : $\forall$ {A,B} $\llens\Box(A\Rightarrow B)\Rightarrow (A\unrhd B)\rlens$
+  arr f $\Wit{s<=t}$ $\Gs$ = f $\Wit{s<=t}$ ($\Gs$ $\Wit{s<=t}$ $\Wit{t<=t}$)
+
+  identity : $\forall$ {A} $\llens A\unrhd A\rlens$
+  identity = arr ($\Gl x.$ x)
+
+  fst : $\forall$ {A,B} $\llens (A\land B) \unrhd A\rlens$
+  fst = arr ($\Gl(x,y).$ x)
+
+  snd : $\forall$ {A,B} $\llens (A\land B) \unrhd B\rlens$
+  snd = arr ($\Gl(x,y).$ y)
+
+  $(\cdot>\!\!>\!\!>\cdot)$ : $\forall$ {A,B,C} $\llens(A\unrhd B) \Rightarrow  (B\unrhd C)\Rightarrow (A \unrhd C)\rlens$
+  (f $>\!\!>\!\!>$ g) $\Wit{s<=t}$ $\Gs$ = g $\Wit{s<=t}$ (f $\$$ $\Gs$)
+
+  $(\cdot\&\!\&\!\&\cdot)$ : $\forall$ {A,B,C} $\llens(A\unrhd B)\Rightarrow (A\unrhd C) \Rightarrow (A \unrhd B\land C) \rlens$
+  (f $\&\!\&\!\&$ g) $\Wit{s<=t}$ $\Gs$ = ( f $\Wit{s<=t}$ $\Gs$ , g $\Wit{s<=t}$ $\Gs$ )
+
+  constant
+
+  localTime
+
+  initially
+
+  decouple
+
+  never
+
+  now
+
+  later
+
+  tag
+
+  edge
+
+  hold
+
+  first
+
+  last
+
+  switch
+
+  rswitch
+  \end{code}
 
 \section{Remark: 演算法優化}
 \section{其餘性質}
