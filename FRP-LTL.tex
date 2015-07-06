@@ -8,10 +8,14 @@
 \usepackage[margin=3cm]{geometry}
 \usepackage{bussproofs}
 \input{mathdef.tex}
+\usepackage[inline]{enumitem}
 
 % for Haskell/Agda code
 \usepackage{listings}
 \usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+
+\newcommand{\llens}{[\![}
+\newcommand{\rlens}{]\!]}
 
 \newcommand{\U}{\mathcal{U}}
 \newcommand{\bN}{$\N$}
@@ -110,7 +114,7 @@
   sigma type
   predicate
 
-\section{Modelling Temporal Logic}
+\section{Modelling Linear Temporal Logic (LTL)}
   在 Dependently Typed Language 當中，LTL 命題可以很直接的 encode 在型別
   當中。 LTL 命題直接就是 $\Time$ 上面的 predicate，型別為 $\Time\to\U$。
   與此同時，我們可以直接給 LTL 的語法與語義轉換成程式實作如下：
@@ -238,7 +242,41 @@
 
   \subsection{Well-behaved Reactive Functions}
 \section{LTL types FRP}
+  在前一節當中，我們概略的介紹了 FRP 的想法以及系統架構方法。本節我們將
+  介紹核心的內容，即 LTL 與 FRP 程式之間如何透過 Curry-Howard Correspondence
+  連繫起來。我們可以看到 FRP 基本上是建構以資料流向和事件發生為主的系統，
+  這部份很自然的可以跟 LTL 當中 $\Diamond$、$\Box$ 等語義連結起來，而
+  我們將看到 LTL 也將可以很好的限制 FRP Signal Function 的行為，讓奇怪的
+  程式無法 type check。
 
+  在非 dependently typed language 當中， FRP 程式的型別只有不動的 Signal、
+  SF 等，不過在 dependently typed langauge 當中，很自然的型別也可以被 $\Time$
+  所 parameterize。我們稱此型別為 \emph{Reactive Type}。注意到第三節中
+  LTL 的構造（$(\cdot\land\cdot), (\cdot\lor\cdot), (\cdot\Rightarrow\cdot),\bigcirc,\Box,\Diamond,(\cdot\mathsf{U}\cdot)$）都是 $\text{RSet}$ 上的函數。
+  在這樣的設計之下，Curry-Howard Correspondence 提供給我們的是：「
+  \emph{Propositinos with one time parameter (temporal propositions) as reactive types}」[1]。
+
+  \begin{code}
+  RSet : $\U_1$
+  RSet = $\Time\to\U$
+
+  $\langle\cdot\land\cdot\rangle$ : $\U$ $\to$ RSet
+  $\langle$ A $\rangle$ = $\lambda t.$ A
+
+  $\llens\cdot\rlens$ : RSet $\to$ $\U$
+  $\llens$ A $\rlens$ = $\forall$ {s} A s
+  \end{code}
+
+  Reactive types 的一個例子是包含所有過去的時間的型別
+  $\text{Past} : \text{RSet}$，定義為 $\text{Past}\; s = \exists\{t\} (t\le s)$
+  。此外我們提供了兩個輔助函數。
+  \begin{enumerate*}
+    \item $\langle\cdot\rangle$：對任意的 $A:\U$，$\langle A\rangle$ 是個
+    constant reactive type，在任意時間點的型別都是 $A$。
+    \item $\llens\cdot\rlens$：用來將 Reactive types 變回 types，作法是把
+    time 參數給 quantify 起來。對於 $A:\text{RSet}$，我們有 $\Gs\{s\}:A\,t$
+    對任意的 $\Gs:\llens A\rlens$。
+  \end{enumerate*}
 
 \section{Remark: 演算法優化}
 \section{其餘性質}
