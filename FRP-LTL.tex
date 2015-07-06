@@ -19,7 +19,7 @@
 \newcommand{\Time}{\mathsf{Time}}
 \newcommand{\TU}{\mathsf{U}}
 \newcommand{\TE}{\mathsf{E}}
-\newcommand{\Wit}[1]{$\,\text{\texttt{#1}}\,$}
+\newcommand{\Wit}[1]{\,\text{\texttt{#1}}\,}
 
 \newcommand{\U}{\mathcal{U}}
 \newcommand{\bN}{$\N$}
@@ -108,7 +108,12 @@
 \maketitle
 
 \section{簡介}
-  
+  本篇文章為閱讀 [1] 的心得。 [1] 當中討論 Functional Reactive Programming
+  以及 Linear Temporal Logic 之間的 Curry-Howard Correspondence。在此
+  correspondence 當中，Linear Temporal Logic 可以很適當的當成 Reactive Type，
+  拿來 type Functional Reactive Programs。文章中的程式皆實作在 Agda 上。
+  在 Dependently Typed Langauge, Agda 當中，Linear Temporal Logic 可以很自然
+  的 encode 成 type，而它的 Modalities 則成為 type-level functions。
 
 \section{Dependent Types}
 
@@ -130,7 +135,8 @@
   computation，根據輸入的值，計算出不同的 \emph{type}，而 \textit{getpred}
   是一個 dependent function，輸入的參數型別是 $\N$，且在 type
   當中，該參數的名字是 $n$，我們並以此計算 \textit{getpred} 最終的回傳值型別
-  $\mathit{predtype}\,n$。
+  $\mathit{predtype}\,n$。這裡 $\U$ 代表 \emph{Type of Types} (roughly)，即
+  universes （雖然實際上應該是 hierarchy of universes，不過這裡略去不提）
 
   \begin{minipage}[t]{0.43\textwidth}
     \begin{prooftree}
@@ -178,7 +184,12 @@
   $\Sigma$ type 邏輯上對應到 $\exists$-quantification，因此我們這裡的符號
   又寫作 $\exists\{x\}\;B$。
 
-  \paragraph{$\Time$ 慣例}
+  \paragraph{$\Time$ 慣例} 本篇報告當中我們假設 $\Time$ 是離散的、是
+  well-ordered、其上的 ordering 是 decidable。$\Time$ 上的 ordering
+  是一個 data type。$s\le t$ 代表 $s$ 小於等於 $t$ 這個命題（這個
+  predicate 其實是 data type），並以 $\Wit{s<=t}$ 代表它的證明。
+  此外 $\Wit{s<=s}$、$\Wit{s<=t<=u}$ 分別代表 $(\cdot\le\cdot)$ 的
+  reflexivity 以及 transitivity。
 
 \section{Modelling Linear Temporal Logic (LTL)}
   在 Dependently Typed Language 當中，LTL 命題可以很直接的 encode 在型別
