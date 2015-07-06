@@ -161,9 +161,9 @@
   \begin{code}
   $(\cdot\underline{\TU}\cdot),(\cdot\rhd\cdot),(\cdot\unrhd\cdot),(\cdot\leadsto\cdot)$ : $(\Time\to\U)\to(\Time\to\U)\to\Time\to\U$
   (A $\underline{\TU}$ B) s = $\exists$ {t} ($s\le t$) $\times$ A [s,t] $\times$ B t
-  (A $\rhd$ B) s = $\forall${t} ($s\le t$) $\to$ A [s,t) $\to$ B t
-  (A $\unrhd$ B) s = $\forall${t} ($s\le t$) $\to$ A [s,t] $\to$ B t
-  (A $\leadsto$ B) s = $\forall${s} ($s\le t$) $\to$ A [s,t] $\to$ B $\langle$ s,t $\rangle$
+  (A $\rhd$ B) s = $\forall${t} ($s\le t$) $\to$ A[s,t) $\to$ B t
+  (A $\unrhd$ B) s = $\forall${t} ($s\le t$) $\to$ A[s,t] $\to$ B t
+  (A $\leadsto$ B) s = $\forall${s} ($s\le t$) $\to$ A[s,t] $\to$ B $\langle$ s,t $\rangle$
   \end{code}
 
   特別的是，$A\Rightarrow B$, $A\unrhd B$ 以及 $A\rhd B$ 三者都是
