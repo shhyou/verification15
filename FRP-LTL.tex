@@ -134,13 +134,13 @@
   $\bigcirc,\Diamond,\Box$ : $(\Time\to\U)\to\Time\to\U$
   ($\bigcirc$ A) s = A ($s+1$)
   ($\Diamond$ A) s = $\exists$ {t} ($s\le t$) $\times$ A 
-  ($\Box$ A) s = $\forall$ {t} ($s\le t$) $\to$ A t
+  ($\Box$ A) s = $\forall${t} ($s\le t$) $\to$ A t
 
   $(\cdot\TU\cdot)$ : $(\Time\to\U)\to(\Time\to\U)\to\Time\to\U$
   (A $\TU$ B) s = $\exists$ {t} ($s\le t$) $\times$ A[s,t) $\times$ B t
 
   $(\cdot[\cdot,\cdot))$ : $(\Time\to\U)\to\Time\to\Time\to\U$
-  A[s,u) = $\forall$ {t} ($s\le t$) $\to$ ($t<u$) $\to$ A t
+  A[s,u) = $\forall${t} ($s\le t$) $\to$ ($t<u$) $\to$ A t
   \end{code}
 
   其中在以上程式碼中， $(\cdot\times\cdot)$ 是 non-dependent pair 的 data types
@@ -161,9 +161,9 @@
   \begin{code}
   $(\cdot\underline{\TU}\cdot),(\cdot\rhd\cdot),(\cdot\unrhd\cdot),(\cdot\leadsto\cdot)$ : $(\Time\to\U)\to(\Time\to\U)\to\Time\to\U$
   (A $\underline{\TU}$ B) s = $\exists$ {t} ($s\le t$) $\times$ A [s,t] $\times$ B t
-  (A $\rhd$ B) s = $\forall$ {t} ($s\le t$) $\to$ A [s,t) $\to$ B t
-  (A $\unrhd$ B) s = $\forall$ {t} ($s\le t$) $\to$ A [s,t] $\to$ B t
-  (A $\leadsto$ B) s = $\forall$ {s} ($s\le t$) $\to$ A [s,t] $\to$ B $\langle$ s,t $\rangle$
+  (A $\rhd$ B) s = $\forall${t} ($s\le t$) $\to$ A [s,t) $\to$ B t
+  (A $\unrhd$ B) s = $\forall${t} ($s\le t$) $\to$ A [s,t] $\to$ B t
+  (A $\leadsto$ B) s = $\forall${s} ($s\le t$) $\to$ A [s,t] $\to$ B $\langle$ s,t $\rangle$
   \end{code}
 
   特別的是，$A\Rightarrow B$, $A\unrhd B$ 以及 $A\rhd B$ 三者都是
@@ -266,7 +266,7 @@
   $\langle$ A $\rangle$ = $\lambda t.$ A
 
   $\llens\cdot\rlens$ : RSet $\to$ $\U$
-  $\llens$ A $\rlens$ = $\forall$ {s} A s
+  $\llens$ A $\rlens$ = $\forall${s} A s
   \end{code}
 
   Reactive types 的一個例子是包含所有過去的時間的型別
@@ -292,39 +292,97 @@
   mouseClick   : $\llens\;\TE\langle$MouseEvent$\rangle\;\rlens$
   \end{code}
 
+  在底下我們給一些 FRP combinators 在此實作中的定義以及它怎麼用 LTL type。
+  paper 裡將 \textit{arr}, \textit{fst}, \textit{snd}, $(\cdot\&\!\&\!\&\cdot)$
+  都以 $(\cdot\unrhd\cdot)$ 給語義，不過這邊我不太確定為何。當然相對於直接以
+  $(\cdot\Rightarrow\cdot)$ 給語義，$(\cdot\unrhd\cdot)$ 多了時間的資訊（有
+  $\forall\{t\}\,s\le t$ 這個資訊可以用）。
+
+  \begin{minipage}[t]{\textwidth}
+    \begin{minipage}[t]{0.46\textwidth}
+      \begin{code}
+[$\cdot$] : $\forall${A} $\llens A\rlens \to \llens\Box A\rlens$
+[ a ] $\Wit{s<=t}$ = a
+
+($\cdot$before$\cdot$) : $\forall${A,s,u,v} A[s,v] $\to$ $u\le v$ $\to$ A[s,u]
+($\Gs$ before $\Wit{u<=v}$) $\Wit{s<=t}$ $\Wit{t<=u}$ = $\Gs$ $\Wit{s<=t}$ $\Wit{t<=u<=v}$
+
+$(\cdot\$\cdot)$ : $\forall${A,B,s,u} $(A\unrhd B)\to A[s,u] \to B[s,u]$
+(f $\$$ $\Gs$) $\Wit{s<=t}$ $\Wit{t<=u}$ = f $\Wit{s<=t}$ ($\Gs$ before $\Wit{t<=u}$)
+
+arr : $\forall${A,B} $\llens\Box(A\Rightarrow B)\Rightarrow (A\unrhd B)\rlens$
+arr f $\Wit{s<=t}$ $\Gs$ = f $\Wit{s<=t}$ ($\Gs$ $\Wit{s<=t}$ $\Wit{t<=t}$)
+      \end{code}
+    \end{minipage}
+    \begin{minipage}[t]{0.54\textwidth}
+      \begin{code}
+identity : $\forall${A} $\llens A\unrhd A\rlens$
+fst : $\forall${A,B} $\llens (A\land B) \unrhd A\rlens$
+snd : $\forall${A,B} $\llens (A\land B) \unrhd B\rlens$
+
+identity = arr [$\Gl x.$ x]
+fst = arr [$\Gl(x,y).$ x]
+snd = arr [$\Gl(x,y).$ y]
+
+$(\cdot>\!\!>\!\!>\cdot)$ : $\forall${A,B,C} $\llens(A\unrhd B) \Rightarrow  (B\unrhd C)\Rightarrow (A \unrhd C)\rlens$
+(f $>\!\!>\!\!>$ g) $\Wit{s<=t}$ $\Gs$ = g $\Wit{s<=t}$ (f $\$$ $\Gs$)
+
+$(\cdot\&\!\&\!\&\cdot)$ : $\forall${A,B,C} $\llens(A\unrhd B)\Rightarrow (A\unrhd C) \Rightarrow (A \unrhd B\land C) \rlens$
+(f $\&\!\&\!\&$ g) $\Wit{s<=t}$ $\Gs$ = ( f $\Wit{s<=t}$ $\Gs$ , g $\Wit{s<=t}$ $\Gs$ )
+      \end{code}
+    \end{minipage}
+  \end{minipage}
+
+  我們也可以回顧 4.2 節中討論的 Signal function 在 LTL 當中會如何 typed。
+  將證明拿進來考慮並展開定義的話，我們能夠得到以下的比較表：
+
+  \begin{enumerate}
+    \item $\text{SF}\,A\,B \approx \llens \boxminus \langle A\rangle \Rightarrow \langle B\rangle\rlens$
+    \begin{code}
+SF A B = $\E{f : \text{Signal}\, A \to \text{Signal}\, B} \mathsf{Casual}\,f$
+           = $\E{f : (\Time\to A)\to(\Time\to B)}$
+               $\forall${$\Gs,\Gs',t$} ($\forall${s} ($s\le t$) $\to$ $\Gs\,s=\Gs'\,s$) $\to$ ($\forall${s} ($s\le t$) $\to$ $f\,\Gs\,s=f\,\Gs'\,s$)
+$\llens\boxminus\langle A\rangle \Rightarrow \langle B\rangle\rlens$ = $\forall${t} $\boxminus\langle A\rangle$ t $\to$ $\langle B\rangle$ t
+                    = $\forall${t} ($\forall${s} ($s\le t$) $\to$ A) $\to$ B
+    \end{code}
+
+    大致上來說，對於 $\llens \boxminus\langle A\rangle \Rightarrow \langle B\rangle \rlens$ 中的元素，由於 $\forall\{s\}(s\le t)\to A$ 只能參考到比 $t$ 更前面的時間資訊 $s$，因此我們可以證明其滿足 SF $A$ $B$ 的 Casual
+    條件。反過來說，對於 SF $A$ $B$ 中的元素我們顯然可以將其轉換成另一邊的
+    元素，只要把證明丟掉就好（而原始 $f$ 的良好性質有賴 Cacual 證明規範）。
+
+    \item $\text{SF}'\,A\,B\approx \langle A\rangle \unrhd \langle B\rangle$
+    \begin{code}
+SF$'$ A B s = $\E{f : \text{Signal}\, A \to \text{Signal}\, B} \mathsf{Casual}_s\,f$
+              = $\E{f : (\Time\to A)\to(\Time\to B)}$
+                  $\forall${$\Gs,\Gs',t$} ($\forall${u} ($s\le u$) $\to$ ($u\le t$) $\to$ $\Gs\,u=\Gs'\,u$) $\to$
+                                ($\forall${u} ($s\le u$) $\to$ ($u\le t$) $\to$ $f\,\Gs\,u=f\,\Gs'\,u$)
+($\langle A\rangle \unrhd \langle B\rangle$) s = $\forall${t} $\langle A\rangle$[s,t] $\to$ $\langle B\rangle$ t
+                   = $\forall${t} ($\forall${u} ($s\le u$) $\to$ ($u\le t$) $\to$ A) $\to$ B
+    \end{code}
+
+    與前一項類似，不過這次 $\mathsf{Casual}_s\,f$ 條件納入起始時間 $s$。比起
+    前項可以看過去所有時間，這次只能看其中一段，因此對照的 LTL type 是
+    $\langle A\rangle\unrhd\langle B\rangle$
+
+    \item $\text{SF}''\,A\,B\approx\langle A\rangle \rhd\langle B\rangle$
+    與第二項相同，只不過把等號拿掉。
+
+  \end{enumerate}
+
+  我們顯然可見以 LTL 刻畫的 type 更為簡潔。
+
+  \paragraph{FRP Primitives} FRP 的部份 Primitives
   \begin{code}
-  ($\cdot$before$\cdot$) : $\forall$ {A,s,u,v} A[s,v] $\to$ $u\le v$ $\to$ A[s,u]
-  ($\Gs$ before $\Wit{u<=v}$) $\Wit{s<=t}$ $\Wit{t<=u}$ = $\Gs$ $\Wit{s<=t}$ $\Wit{t<=u<=v}$
-
-  $(\cdot\$\cdot)$ : $\forall$ {A,B,s,u} $(A\unrhd B)\to A[s,u] \to B[s,u]$
-  (f $\$$ $\Gs$) $\Wit{s<=t}$ $\Wit{t<=u}$ = f $\Wit{s<=t}$ ($\Gs$ before $\Wit{t<=u}$)
-
-  arr : $\forall$ {A,B} $\llens\Box(A\Rightarrow B)\Rightarrow (A\unrhd B)\rlens$
-  arr f $\Wit{s<=t}$ $\Gs$ = f $\Wit{s<=t}$ ($\Gs$ $\Wit{s<=t}$ $\Wit{t<=t}$)
-
-  identity : $\forall$ {A} $\llens A\unrhd A\rlens$
-  identity = arr ($\Gl x.$ x)
-
-  fst : $\forall$ {A,B} $\llens (A\land B) \unrhd A\rlens$
-  fst = arr ($\Gl(x,y).$ x)
-
-  snd : $\forall$ {A,B} $\llens (A\land B) \unrhd B\rlens$
-  snd = arr ($\Gl(x,y).$ y)
-
-  $(\cdot>\!\!>\!\!>\cdot)$ : $\forall$ {A,B,C} $\llens(A\unrhd B) \Rightarrow  (B\unrhd C)\Rightarrow (A \unrhd C)\rlens$
-  (f $>\!\!>\!\!>$ g) $\Wit{s<=t}$ $\Gs$ = g $\Wit{s<=t}$ (f $\$$ $\Gs$)
-
-  $(\cdot\&\!\&\!\&\cdot)$ : $\forall$ {A,B,C} $\llens(A\unrhd B)\Rightarrow (A\unrhd C) \Rightarrow (A \unrhd B\land C) \rlens$
-  (f $\&\!\&\!\&$ g) $\Wit{s<=t}$ $\Gs$ = ( f $\Wit{s<=t}$ $\Gs$ , g $\Wit{s<=t}$ $\Gs$ )
-
-  constant
+  constant : $\forall${A,B} $\llens \Box B\Rightarrow A\rhd B\rlens$
 
   localTime
 
-  initially
+  initially : $\forall${A} $\llens A\Rightarrow A\unrhd A\rlens$
 
-  decouple
-
+  decouple : $\forall${A} $\llens\ominus A\Rightarrow A\rhd \ominus A\rlens$
+  \end{code}
+  \paragraph{Event Primitives} FRP 的事件
+  \begin{code}
   never
 
   now
@@ -344,6 +402,12 @@
   switch
 
   rswitch
+  \end{code}
+  \paragraph{Loops} FRP 的不動點
+  \begin{code}
+  fix
+  ifix
+  loop
   \end{code}
 
 \section{Remark: 演算法優化}
