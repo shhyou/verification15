@@ -108,13 +108,77 @@
 \maketitle
 
 \section{簡介}
+  
+
 \section{Dependent Types}
-  depenent types
-  types as values
-  type level functions
-  pi type
-  sigma type
-  predicate
+
+  Dependently Typed Languages 當中，程式語言允許型別中後面的部份依賴於
+  前面的值。同時也允許做 type-level computation，並能把許多邏輯命題
+  encode 在 type 當中。詳細的部份可以參見 [3][4]。舉例來說，
+
+  \begin{code}
+  predtype : $\N\to\U$
+  predtype 0 = $\N$
+  predtype (suc n) = $\N\times\N$
+
+  getpred : (n : $\N$) $\to$ predtype n
+  getpred 0 = 0
+  getpred (suc n) = (suc n , n)
+  \end{code}
+
+  以上的程式碼當中 \textit{predtype} 做了 type-level
+  computation，根據輸入的值，計算出不同的 \emph{type}，而 \textit{getpred}
+  是一個 dependent function，輸入的參數型別是 $\N$，且在 type
+  當中，該參數的名字是 $n$，我們並以此計算 \textit{getpred} 最終的回傳值型別
+  $\mathit{predtype}\,n$。
+
+  \begin{minipage}[t]{0.43\textwidth}
+    \begin{prooftree}
+    \AxiomC{$\GG,a:A \entails e : B\; a$}
+    \UnaryInfC{$\GG \entails \lam{a} e : \A{x:A} B\;x$}
+    \end{prooftree}
+  \end{minipage}
+  \begin{minipage}[t]{0.43\textwidth}
+    \begin{prooftree}
+    \AxiomC{$\GG \entails f : \A{x:A} B\; x$}
+    \AxiomC{$\GG \entails a : A$}
+    \BinaryInfC{$\GG \entails f\; a : B\; a$}
+    \end{prooftree}
+  \end{minipage}
+
+  \begin{minipage}{0.35\textwidth}
+    \begin{prooftree}
+      \AxiomC{$\GG\entails a:A$}
+      \AxiomC{$\GG\entails b:B\;a$}
+      \BinaryInfC{$\GG\entails (a,b):\E{x:A} B\;x$}
+    \end{prooftree}
+  \end{minipage}
+  \begin{minipage}{0.28\textwidth}
+    \begin{prooftree}
+      \AxiomC{$\GG\entails p:\E{x:A} B\;x$}
+      \UnaryInfC{$\GG\entails\fst p:A$}
+    \end{prooftree}
+  \end{minipage}
+  \begin{minipage}{0.28\textwidth}
+    \begin{prooftree}
+      \AxiomC{$\GG\entails p:\E{x:A} B\;x$}
+      \UnaryInfC{$\GG\entails\snd p:B\;(\fst p)$}
+    \end{prooftree}
+  \end{minipage}
+
+  \paragraph{$\Pi$ type} 前面的 $(n:\N)\to T(n)$ 就是 $\Pi$ type，dependent
+  product type 。$\Pi$ type 有時候又寫成 $\A{n:\N} T$。在邏輯上，$\Pi$ type
+  對應到 $\forall$-quantification，因此有時符號又寫作 $\forall\{n\}\;T$
+  注意此例當中我們以大括弧將 $n$ 包起來，代表 $n$ 是
+  \emph{implicit parameter}，由 compiler 自動 infer。$\Pi$ type 中的元素
+  即為 dependent function。
+
+  \paragraph{$\Sigma$ type} $\Sigma$ type 寫成 $\E{x:A} B(x)$，是 dependent
+  pair，其中的元素為 $(x,p)$。這當中 $x:A$ 是 witness，而 $p:B(x)$ 則是證明。
+  $\Sigma$ type 邏輯上對應到 $\exists$-quantification，因此我們這裡的符號
+  又寫作 $\exists\{x\}\;B$。
+
+  \paragraph{$\Time$ 慣例}
 
 \section{Modelling Linear Temporal Logic (LTL)}
   在 Dependently Typed Language 當中，LTL 命題可以很直接的 encode 在型別
@@ -216,7 +280,7 @@
   Signal a = $\Time$ $\to$ a
   \end{code}
 
-  所以上例中 \textit{dist} 具有型別 $\text{Signal}\; \R$. 在 Yampa 的設計
+  所以上例中 \textit{dist} 具有型別 $\text{Signal}\; \R$. 在 Yampa [2] 的設計
   當中，為了避免直接撰寫 Signal 時可能引入的 time-leak 及 space-leak 問題，
   程式設計師只被允許使用給定的 combinators 撰寫所謂的 \emph{signal functions}
   （\emph{signal transformers}），且沒有直接操作 $\text{Signal}\; a$ 的方法：
@@ -240,9 +304,68 @@
 
   \subsection{FRP Combinators}
 
-  在 Yampa 的設計中，
+  在 Yampa 的設計中，程式設計師不能直接存取到 signal，也不能直接任意撰寫
+  signal functions，只能透過 Yampa 預先提供的 primitives 組合出來。一些範例的
+  primitives 為：\textit{arr} （把普通函數 lift 成 signal function）、
+  ($\cdot>\!\!>\!\!>\cdot$) （合成 signal functions）、\textit{constant}
+  產生固定輸出值的 signal functions）、\textit{delay} （延遲一定時間）
+
+  \begin{code}
+  arr : $(a\to b)\to \text{SF}\,a\,b$
+  ($\cdot>\!\!>\!\!>\cdot$) : SF a b $\to$ SF b c $\to$ SF a c
+  constant : $b\to\text{SF}\,a\,b$
+  delay : $\Time\to a\to\text{SF}\,a\,a$
+  \end{code}
+
+  在此之外，Yampa 針對事件的處理也提供了許多函式。其中兩個函式 \textit{now}
+  產生一個立即的事件、\textit{after} 在指定的時間後產生一次給定的事件，而
+  \textit{switch}、\textit{rSwitch} 依據事件可以對資料的流向做切換（可以
+  類比於火車的轉轍器）。在 $\text{SF}\,a\,(b,\text{Maybe}\,c)$ 沒有發生事件
+  時，這個 signal function 的轉換就是 \textit{switch} 的轉換（前面 $\text{SF}\,a\,(b,\_)$ 這一段）。一旦發生了事件（有 $\text{Just}\,c$，函數 $c\to \text{SF}\,a\,b$ 就會被 apply，產生的新的 signal function 為 \textit{switch} 新的結果。\textit{rSwitch} 也類似，不過每次事件都是產生新的 signal function，
+  並會被替換上來 [2, Sec 3. Switches]。
+
+  \begin{code}
+  now : $b\to \text{SF}\,a\,(\text{Maybe}\,b)$
+  after : $\Time\to b\to \text{SF}\,a\,(\text{Maybe}\,b)$
+  switch : $\text{SF}\,a\,(b,\text{Maybe}\,c)\to (c\to\text{SF}\,a\,b)\to\text{SF}\,a\,b$
+  rSwitch : $\text{SF}\,a\,b\to\text{SF}\,(a,\text{Maybe}\,(\text{SF}\,a\,b))\,b$
+  \end{code}
 
   \subsection{Well-behaved Reactive Functions}
+
+  Yampa 透過提供一組固定的 primitives 來限制 signal functions $\text{SF}\,a\,b$
+  函數能有的型式。然而，型別 $\text{SF}\,a\,b$ 本身並不足以刻畫 signal
+  functions (transformations) 函數本身應有的行為。$\text{SF}\,a\,b$ 內部的實
+  作也有可能是簡單的 $(\Time\to a)\to\Time\to b$ 函數，在這種狀況下，我們
+  並不能保證 signal functions 本身不會取用到未來的函數值。
+
+  不過在 dependently typed language 當中，我們可以透過把函數性質與型別
+  包在一起的型式，讓滿足該型別的函數全部帶有某種「正確性」的證明。底下我們
+  將 $\text{SF}\,a\,b$ 型別定義為所有滿足 $\textsf{Casual}$ predicate 的函數：
+
+  \begin{code}
+  SF a b : $\U\to\U\to\U$
+  SF a b = $\E{f: \text{Signal}\, a \to \text{Signal}\, b} \mathsf{Casual}\, f$
+
+  $\mathsf{Casual}$ f = $\forall{\sigma,\sigma'}$ $\forall${t} ($\sigma\approx_t\sigma')\to(f\,\sigma\approx_t f\,\sigma')$
+  $\sigma\approx_t\sigma'$ = $\forall${s} ($s\le t$) $\to$ $\sigma\,s=\sigma'\,s$
+  \end{code}
+
+  $\mathsf{Casual}$ 限制 signal function $f$ 行為的方法在於要求每個
+  $\text{SF}\,a\,b$ 中的函數都要提供證明，保證對於任意的 signal $\sigma$,
+  $\sigma'$，對於任意的時間點 $t$，只要他們在 $t$ 以前的表現全都一樣，
+  那麼 $f$ 作用在 $\sigma,\sigma'$ 上後在時間點 $t$ 以前，得到的 signal
+  表現也必須全部一樣。同樣我們可以延伸此定義，不一定限制 signal 在 $t$
+  過去的所有時間點都表現一樣，而是加入一個「起始時間」，只要求在 $[s,t]$
+  之間表現一樣：
+
+  \begin{code}
+  SF$'$ a b : $\U\to\U\to\Time\to\U$
+  SF$'$ a b s = $\E{f: \text{Signal}\, a \to \text{Signal}\, b} \mathsf{Casual}_s\, f$
+
+  $\mathsf{Casual}_s$ f = $\forall{\sigma,\sigma'}$ $\forall${t} ($\sigma\approx_{[s,t]}\sigma')\to(f\,\sigma\approx_{[s,t]} f\,\sigma')$
+  $\sigma\approx_{[s,t]}\sigma'$ = $\forall${u} ($s\le u$) $\to$ ($u\le t$) $\to$ $\sigma\,s=\sigma'\,s$
+  \end{code}
 \section{LTL types FRP}
   在前一節當中，我們概略的介紹了 FRP 的想法以及系統架構方法。本節我們將
   介紹核心的內容，即 LTL 與 FRP 程式之間如何透過 Curry-Howard Correspondence
@@ -378,7 +501,7 @@ SF$'$ A B s = $\E{f : \text{Signal}\, A \to \text{Signal}\, B} \mathsf{Casual}_s
   decoupled （不依賴於同一個時間的輸入）。
 
   \textit{decouple} 函數也可以看出輸入一個 $A$ 後輸出的是 $\ominus A$
-  （有 delay）。當然當 $A\equiv\langle A'\rangle$ 時 \textit{decouple}
+  （有 delay，這類似 Yampa 的 \textit{delay} 1）。當然當 $A\equiv\langle A'\rangle$ 時 \textit{decouple}
   的型別會簡化為 $A'\rhd A'$。（\textit{decouple} 的型別展開來為
   $\forall\{A,s\}\; A\,(s-1)\to \forall\{t\}(s\le t)\to A[s,t) \to A\,(t-1)$。）
 
@@ -445,7 +568,13 @@ SF$'$ A B s = $\E{f : \text{Signal}\, A \to \text{Signal}\, B} \mathsf{Casual}_s
   $B-$indexed fixed-point combinator，從而實作出 FRP 中的 \textit{loop}
   combinator。
 
-\section{Remark: 演算法優化}
-\section{其餘性質}
 \section{參考資料}
+\begin{enumerate}
+  \item Alan Jeffrey. \textit{LTL types FRP: linear-time temporal logic propositions as types, proofs as functional reactive programs}. PLPV '12.
+  \item \textit{Yampa}. \texttt{https://wiki.haskell.org/Yampa}.
+  Originally developed by Yale Haskell Group.
+  \item FLOLAC 2014 Dependently Typed Programming \texttt{http://flolac.iis.sinica.edu.tw/flolac14/dtp.html}
+  \item FLOLAC 2014 Type Theory and Logic \texttt{http://flolac.iis.sinica.edu.tw/flolac14/logictype.html}
+\end{enumerate}
+
 \end{document}
