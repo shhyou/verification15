@@ -7,7 +7,6 @@
 \usepackage{colonequals}
 \usepackage[margin=3cm]{geometry}
 \usepackage{bussproofs}
-\input{mathdef.tex}
 \usepackage[inline]{enumitem}
 
 % for Haskell/Agda code
@@ -21,6 +20,8 @@
 \newcommand{\TE}{\mathsf{E}}
 \newcommand{\Wit}[1]{\,\text{\texttt{#1}}\,}
 
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\R}{\mathbb{R}}
 \newcommand{\U}{\mathcal{U}}
 \newcommand{\bN}{$\N$}
 \newcommand{\uu}{\text{\_}}
@@ -332,7 +333,7 @@
   產生一個立即的事件、\textit{after} 在指定的時間後產生一次給定的事件，而
   \textit{switch}、\textit{rSwitch} 依據事件可以對資料的流向做切換（可以
   類比於火車的轉轍器）。在 $\text{SF}\,a\,(b,\text{Maybe}\,c)$ 沒有發生事件
-  時，這個 signal function 的轉換就是 \textit{switch} 的轉換（前面 $\text{SF}\,a\,(b,\_)$ 這一段）。一旦發生了事件（有 $\text{Just}\,c$，函數 $c\to \text{SF}\,a\,b$ 就會被 apply，產生的新的 signal function 為 \textit{switch} 新的結果。\textit{rSwitch} 也類似，不過每次事件都是產生新的 signal function，
+  時，這個 signal function 的轉換就是 \textit{switch} 的轉換（前面 $\text{SF}\,a\,(b,\_)$ 這一段）。一旦發生了事件（有 $\text{Just}\,c$），函數 $c\to \text{SF}\,a\,b$ 就會被 apply，產生的新的 signal function 為 \textit{switch} 新的結果。\textit{rSwitch} 也類似，不過每次事件都是產生新的 signal function，
   並會被替換上來 [2, Sec 3. Switches]。
 
   \begin{code}
